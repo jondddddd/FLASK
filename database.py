@@ -37,24 +37,26 @@ def get_branches():
 
     return branch_list
 
-def get_past_order(username):
+def get_pastorders():
+    pastorder_list = []
     orders_coll = order_management_db["orders"]
-    past_orders = orders_coll.find_one({"username":username})
-    return past_orders
-def get_past_order():
+    orderdetails_coll=orders_coll["details"]
+    for u in orders_coll.find({},{"details":1}):
+        for v in u["details"]:
+            pastorder_list.append(v)
+    return pastorder_list
 
-    past_orders_list = []
-
-    orders_coll = order_management_db["orders"]
-
-    for o in orders_coll.find({}):
-        past_orders_list.append(o)
-
-    return past_orders_list
+    return pastorders_list
 def get_user(username):
     customers_coll = order_management_db['customers']
     user=customers_coll.find_one({"username":username})
     return user
+def get_password(username):
+    return get_user(username)["password"]
 def create_order(order):
     orders_coll = order_management_db['orders']
     orders_coll.insert(order)
+def update_password(username,newpassword):
+    customers_coll = order_management_db["customers"]
+    updatepassword = customers_coll.update_one({"username":username}, {"$set":{"password":newpassword}})
+    return updatepassword

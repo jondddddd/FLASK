@@ -75,7 +75,7 @@ def logout():
     return redirect('/')
 
 
-@app.route('/addtocart')
+@app.route('/addtocart') #this function adds 1 item to the cart from an individual product page
 def addtocart():
     code = request.args.get('code', '')
     product = db.get_product(int(code))
@@ -86,6 +86,7 @@ def addtocart():
     item["qty"] = 1
     item["name"] = product["name"]
     item["subtotal"] = product["price"]*item["qty"]
+    item["code"] = code
 
     if(session.get("cart") is None):
         session["cart"]={}
@@ -94,9 +95,35 @@ def addtocart():
     cart[code]=item
     session["cart"]=cart
     return redirect('/cart')
-@app.route('/cart')
+
+@app.route('/additem', methods=["POST"]) #this routes to my html code
+def additem():
+    cart = session["cart"]
+    code = request.form.get('code')
+    qty = int(request.form.get('qty'))
+    unit_price = request.form.get('price')
+    product = db.get_product(int(code))
+
+    for item in cart.values():
+        if item["code"] == code:
+            item["qty"] = qty
+            item["subtotal"] = product["price"]*qty
+            cart[code]=item
+            session["cart"]=cart
+    return render_template("cart.html")
+
+@app.route('/removeitem', methods=["POST"])
+def removeitem():
+    cart = session["cart"]
+    code = request.form.get('code')
+    del cart[code]
+    session["cart"]=cart
+    return render_template("cart.html")
+
+@app.route("/cart")
 def cart():
-    return render_template('cart.html')
+    return render_template("cart.html")
+
 @app.route('/checkout')
 def checkout():
     # clear cart in session memory upon checkout
@@ -108,17 +135,28 @@ def checkout():
 def ordercomplete():
     return render_template('ordercomplete.html')
 
-@app.route('/past_orders')
-def past_orders():
 
-    code = request.args.get('code', '')
-    past_orders_list = db.get_past_order()
-    return render_template('past_orders.html', page="Past Orders", past_orders_list=past_orders_list)
 
-@app.route('/changepassword')
+@app.route("/changepassword",methods=["GET","POST"])
 def changepassword():
-    return render_template('changepassword.html')
+    username = session["user"]["username"]
+    password = db.get_password(username)
+    currentpassword = request.form.get("currentpassword")
+    newpassword = request.form.get("newpassword")
+    updatepassword = None
+    error = None
 
+    if currentpassword == None:
+        print(currentpassword)
+        error=None
+    elif currentpassword == password:
+        print(currentpassword)
+        updatepassword=db.update_password(username,newpassword)
+    elif currentpassword != password:
+        print(currentpassword)
+        error="Current Password Does Not Match."
+
+    return render_template("changepassword.html", page="Change Password",updatepassword=updatepassword,error=error)
 @app.route('/api/products',methods=['GET'])
 def api_get_products():
     resp = make_response( dumps(db.get_products()) )
@@ -126,7 +164,12 @@ def api_get_products():
     return resp
 
 @app.route('/api/products/<int:code>',methods=['GET'])
-def api_get_products1(code):
-    resp1 = make_response( dumps(db.get_products(code)) )
-    resp1.mimetype = 'application/json'
-    return resp1
+def api_get_product(code):
+    resp = make_response(dumps(db.get_product(code)))
+    resp.mimetype = 'application/json'
+    return resp
+
+@app.route("/pastorders",methods=["GET"])
+def pastorders():
+    pastorder_list = db.get_pastorders()
+    return render_template("pastorders.html", page="Past Orders",pastorder_list=pastorder_list)
