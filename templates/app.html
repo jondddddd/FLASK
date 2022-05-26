@@ -1,0 +1,18 @@
+<html>
+  <header>
+  </header>
+  <body>
+        <a href='/'>Home</a> | <a href='/products'>Products</a> |
+        <a href='/branches'>Branches</a> | <a href='/aboutus'>About Us</a>
+        | <a href='/login'>| Login</a>
+        {% if session["user"] is defined %}
+        Welcome, {{ session["user"]["first_name"] }}.
+    <a href='/logout'>Logout</a>
+        {% else %}
+    <a href='/login'>Login</a>
+        {% endif %}
+        <p/>
+        <p/>
+        <p>{{ page }} Page. </p>
+  </body>
+</html>
